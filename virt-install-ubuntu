@@ -1,0 +1,31 @@
+#!/bin/sh
+
+LOCATION=http://es.archive.ubuntu.com/ubuntu/dists/precise/main/installer-amd64/
+LOCATION=http://es.archive.ubuntu.com/ubuntu/dists/trusty/main/installer-amd64/
+LOCATION=http://es.archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/
+
+while getopts "h:n:" arg; do
+  case $arg in
+    h)
+      echo "usage"
+      exit 1
+      ;;
+    n)
+      name=$OPTARG
+      ;;
+  esac
+done
+
+virt-install \
+  --name $name \
+  --ram 1024 \
+  --disk path=$HOME/.config/libvirt/storage/$name,size=8,format=qcow2 \
+  --vcpus 1 \
+  --os-type linux \
+  --os-variant ubuntu14.04 \
+  --network bridge=virbr0 \
+  --graphics none \
+  --console pty,target_type=serial \
+  --location $LOCATION \
+  --initrd-inject=./ubuntu.ks \
+  --extra-args 'ks=file:/ubuntu.ks console=ttyS0,115200n8 serial'
