@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ "$#" != 3 ]; then
+	echo ""
+	echo " Uso: "$0 nombre ram size" "
+	echo ""
+	exit 255
+fi
+
+name=$1
+ram=$2
+size=$3
+
+
+virt-install \
+    --name $name \
+    --ram $ram \
+    --disk path=/var/lib/libvirt/images/$name.img,format=qcow2,size=$size \
+    --vcpus 2 \
+    --os-type linux \
+    --network bridge=br0 \
+    --graphics none \
+    --location 'http://archive.ubuntu.com/ubuntu/dists/trusty/main/installer-amd64/' \
+    --initrd-inject=/root/kickstart_ubuntu.cfg \
+    --console pty,target_type=serial \
+    --extra-args 'ks=file:/kickstart_ubuntu.cfg console=ttyS0,115200'
+    

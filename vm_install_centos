@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ "$#" != 3 ]; then
+	echo ""
+	echo " Uso: "$0 nombre ram size" "
+	echo ""
+	exit 255
+fi
+
+name=$1
+ram=$2
+size=$3
+
+virt-install \
+    --connect=qemu:///system \
+    --initrd-inject=/root/kickstart_centos.cfg \
+    --name=$name \
+    --ram=$ram \
+    --accelerate \
+    --hvm \
+    --vcpus=2 \
+    --check-cpu \
+    --nographics \
+    --disk path=/var/lib/libvirt/images/$name.img,format=qcow2,size=$size \
+    --extra-args="ks=file:/kickstart_centos.cfg console=ttyS0,115200" \
+    --location=http://mirror.centos.org/centos/7/os/x86_64 \
+    --network=bridge:br0
