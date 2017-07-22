@@ -1,6 +1,7 @@
 install
-url --url http://centos.mirrors.ovh.net/ftp.centos.org/7/os/x86_64/
-repo --name="CentOS" --baseurl=http://centos.mirrors.ovh.net/ftp.centos.org/7/os/x86_64/ --cost=100
+
+url --url http://mirror.airenetworks.es/CentOS//7/os/x86_64/
+repo --name="CentOS" --baseurl=http://mirror.airenetworks.es/CentOS/7/os/x86_64/ --cost=100
 #
 lang en_US.UTF-8
 keyboard us
@@ -54,12 +55,12 @@ openssh-clients
 %pre
 #!/bin/sh
 for x in `cat /proc/cmdline`; do
-        case $x in SERVERNAME*)
-	        eval $x
-		echo "network --device eth0 --bootproto dhcp --hostname ${SERVERNAME}" > /tmp/network.ks
-                ;;
-	        esac;
-	done
+  case $x in SERVERNAME*)
+     eval $x
+     echo "network --device eth0 --bootproto dhcp --hostname ${SERVERNAME}" > /tmp/network.ks
+     ;;
+  esac;
+     done
 %end
 
 %post --log=/root/post-log
