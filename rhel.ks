@@ -10,6 +10,8 @@ keyboard us
 %include /tmp/network.ks
 
 rootpw password
+sshpw --username=root password
+
 firewall --disabled
 authconfig --enableshadow --passalgo=sha512
 selinux --disabled
