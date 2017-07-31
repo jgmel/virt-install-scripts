@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# Script to auto create/install unattended Virtual Machines
+
+usage() { echo "Usage: $(basename "$0") [-h] [-n domname]
+Script to auto create/install unattended Virtual Machines
+
+where:
+  -h, --help                 show this help text
+  -n, --domname              domname
+
+For complete documentation" 1>&2; exit 1; }
+
+OPTS=`getopt -o hn:d: --long help,domname:,distro: -n 'parse-options' -- "$@"`
+
+#echo "$OPTS"
+eval set -- "$OPTS"
+
+DOMNAME=
+DISTRO=rhel7
+ARCH=x86_64
+DISKSIZE=10
+VCPUS=2
+RAM=2048
+
+while true; do
+  case "$1" in
+    -h | --help )    usage; exit 1; shift ;;
+    -n | --domname ) DOMNAME="$2"; shift; shift ;;
+    -d | --distro )  DISTRO="$2"; shift; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
+if [ "$DOMNAME" == "" ]; then
+	usage
+	exit 255
+fi
+
+
+
+if [ "$DISTRO" = rhel6 ]; then
+	LOCATION=http://mirror.airenetworks.es/CentOS/6/os/$ARCH/
+	KICKSTART=./rhel6.cfg
+fi
+
+if [ "$DISTRO" = rhel7 ]; then
+	LOCATION=http://mirror.airenetworks.es/CentOS/7/os/$ARCH/
+	KICKSTART=./rhel7.cfg
+fi
+
+echo "Creating domain $DOMNAME..."
+echo "Location of the OS sources $LOCATION..."
+echo "Using kickstart $KICKSTART..."
+
+virt-install \
+  --name=${DOMNAME} \
+  --vcpus=${VCPUS} \
+  --ram ${RAM} \
+	--disk path=${HOME}/.config/libvirt/storage/${DOMNAME},size=${DISKSIZE},format=qcow2 \
+	--check-cpu \
+  --accelerate \
+  --nographics \
+  --os-type linux \
+  --location=${LOCATION} \
+	--initrd-inject=${KICKSTART} \
+  --extra-args="ks=file:/${KICKSTART} console=ttyS0,115200 HOSTNAME=${DOMNAME}"
+
+exit 255

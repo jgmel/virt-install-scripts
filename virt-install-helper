@@ -1,0 +1,100 @@
+#!/bin/sh
+
+# Helper Script to auto create/install unattended Virtual Machines
+
+usage() { echo "Usage: $(basename "$0") [-h] [-n domname]
+Script to auto create/install unattended Virtual Machines
+
+where:
+  -h, --help                    Show this help text
+  -n NAME, --name NAME          Name of the guest instance
+  -d DISTRO, --distro DISTRO    Name of distribution
+  -m, --memory MEMORY           Configure guest memory allocation.
+  -c, --vcpus VCPUS             Number of vcpus to configure for your guest
+  -w NETWORK, --network NETWORK Configure a guest network interface
+
+For complete documentation" 1>&2; exit 1; }
+
+OPTS=`getopt -o hn:d:m:w: --long help,name:,distro:,memory:,network: -n 'parse-options' -- "$@"`
+
+#echo "$OPTS"
+eval set -- "$OPTS"
+
+DOMNAME=
+DISTRO=rhel7
+ARCH=x86_64
+VCPUS=1
+MEMORY=1024
+DISKSIZE=10
+NETWORK="bridge=virbr0"
+
+while true; do
+  case "$1" in
+    -h | --help )    usage; exit 1; shift ;;
+    -n | --name )    DOMNAME="$2"; shift; shift ;;
+    -d | --distro )  DISTRO="$2"; shift; shift ;;
+    -m | --memory )  MEMORY="$2"; shift; shift ;;
+    -c | --vcpu )    VCPUS="$2"; shift; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
+if [ "$DOMNAME" == "" ]; then
+	usage
+	exit 255
+fi
+
+case "$DISTRO" in
+  rhel6|centos6 )
+    LOCATION=http://mirror.airenetworks.es/CentOS/6/os/$ARCH
+    OS_VARIANT=rhel6
+    KICKSTART=./rhel6.cfg
+	;;
+  rhel7|centos7|centos )
+    LOCATION=http://mirror.airenetworks.es/CentOS/7/os/$ARCH
+    OS_VARIANT=rhel7
+    KICKSTART=./rhel7.cfg
+	;;
+  precise|ubuntu12 )
+    LOCATION=http://es.archive.ubuntu.com/ubuntu/dists/precise/main/installer-amd64/
+    OS_VARIANT=ubuntu13.04
+    KICKSTART=./ubuntu.cfg
+	;;
+  trusty|ubuntu14 )
+    LOCATION=http://es.archive.ubuntu.com/ubuntu/dists/trusty/main/installer-amd64/
+    OS_VARIANT=ubuntu13.04
+    KICKSTART=./ubuntu.cfg
+	;;
+  xenial|ubuntu16|ubuntu )
+    LOCATION=http://es.archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/
+    OS_VARIANT=ubuntu13.04
+    KICKSTART=./ubuntu.cfg
+	;;
+esac
+
+echo "Creating domain $DOMNAME..."
+echo "Location of the OS sources $LOCATION..."
+echo "Using kickstart $KICKSTART..."
+
+TEMP=$(mktemp)
+cat $KICKSTART > $TEMP
+KICKSTART=$( basename $TEMP )
+echo $TEMP:$KICKSTART
+
+virt-install \
+  --name ${DOMNAME} \
+  --vcpus ${VCPUS} \
+  --memory ${MEMORY} \
+  --disk pool=storage,size=${DISKSIZE},format=qcow2 \
+  --network ${NETWORK} \
+  --check-cpu \
+  --accelerate \
+  --nographics \
+  --os-type linux \
+  --os-variant ${OS_VARIANT} \
+  --location ${LOCATION} \
+  --initrd-inject ${TEMP} \
+  --extra-args "ks=file:/${KICKSTART} console=ttyS0,115200 HOSTNAME=${DOMNAME}"
+
+exit 255
